@@ -35,7 +35,7 @@ public class BumperCar {
 		rightMotor.setSpeed(400);
 		Behavior drive = new DriveForward();
 		Behavior detect = new DetectWall();
-		Behavior listen = new DetectWall();
+		Behavior listen = new Listen();
 		Behavior[] behaviorList = { drive, detect, listen };
 		Arbitrator arbitrator = new Arbitrator(behaviorList);
 		LCD.drawString("Bumper Car", 0, 1);
@@ -47,9 +47,15 @@ public class BumperCar {
 class DriveForward implements Behavior {
 
 	private boolean _suppressed = false;
+	private SoundSensor ear;
+	
+	public DriveForward(){
+		ear = new SoundSensor(SensorPort.S2);
+	}
 
 	public boolean takeControl() {
-		return true; // this behavior always wants control.
+		//run till 
+		return ear.readValue() < 30;
 	}
 
 	public void suppress() {
@@ -58,6 +64,10 @@ class DriveForward implements Behavior {
 
 	public void action() {
 		_suppressed = false;
+		
+		LCD.clear();
+		LCD.drawString("Moving forward", 0, 1);
+		
 		BumperCar.leftMotor.forward();
 		BumperCar.rightMotor.forward();
 		while (!_suppressed) {
@@ -87,6 +97,9 @@ class DetectWall implements Behavior {
 	}
 
 	public void action() {
+		LCD.clear();
+		LCD.drawString("Obstacle detected", 0, 1);
+		
 		BumperCar.leftMotor.rotate(-180, true);// start Motor.A rotating
 												// backward
 		BumperCar.rightMotor.rotate(-360); // rotate C farther to make the turn
@@ -104,6 +117,7 @@ class DetectWall implements Behavior {
 class Listen implements Behavior {
 	
 	private SoundSensor ear;
+	private boolean _suppressed = false;
 	
 	public Listen(){
 		 ear = new SoundSensor(SensorPort.S2);
@@ -111,19 +125,21 @@ class Listen implements Behavior {
 
 	@Override
 	public boolean takeControl() {
-		
-		return ear.readValue() > 100;
-		
+		return ear.readValue() > 30;
 	}
 
 	@Override
 	public void action() {
 		
-		if(BumperCar.leftMotor.isMoving()){
+		LCD.clear();
+		
+		if(BumperCar.leftMotor.isMoving() || BumperCar.rightMotor.isMoving()){
+			LCD.drawString("Command stop", 0, 1);
 			BumperCar.leftMotor.stop();
 			BumperCar.rightMotor.stop();
 		}
 		else{
+			LCD.drawString("Command start", 0, 1);
 			BumperCar.leftMotor.forward();
 			BumperCar.rightMotor.forward();
 		}
@@ -131,7 +147,6 @@ class Listen implements Behavior {
 
 	@Override
 	public void suppress() {
-		// TODO Auto-generated method stub
-		
+		_suppressed = true;
 	}
 }
