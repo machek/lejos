@@ -4,6 +4,7 @@ import lejos.nxt.Button;
 import lejos.nxt.LCD;
 import lejos.nxt.Motor;
 import lejos.nxt.SensorPort;
+import lejos.nxt.Sound;
 import lejos.nxt.SoundSensor;
 import lejos.nxt.TouchSensor;
 import lejos.nxt.UltrasonicSensor;
@@ -53,9 +54,11 @@ class DriveForward implements Behavior {
 		ear = new SoundSensor(SensorPort.S2);
 	}
 
+	/**
+	 * always go forward
+	 */
 	public boolean takeControl() {
-		//run till 
-		return ear.readValue() < 30;
+		return true;
 	}
 
 	public void suppress() {
@@ -85,6 +88,9 @@ class DetectWall implements Behavior {
 		sonar = new UltrasonicSensor(SensorPort.S3);
 	}
 
+	/**
+	 * Stops robot if obstacle is detected
+	 */
 	public boolean takeControl() {
 		sonar.ping();
 
@@ -110,7 +116,7 @@ class DetectWall implements Behavior {
 }
 
 /**
- * Sound sensor listening for command to start, stop car
+ * Sound sensor listening for command to turn
  * @author Zdenek
  *
  */
@@ -123,29 +129,25 @@ class Listen implements Behavior {
 		 ear = new SoundSensor(SensorPort.S2);
 	}
 
-	@Override
+	/**
+	 * Listens for loudish sound
+	 */
 	public boolean takeControl() {
 		return ear.readValue() > 30;
 	}
 
-	@Override
+	
 	public void action() {
 		
 		LCD.clear();
-		
-		if(BumperCar.leftMotor.isMoving() || BumperCar.rightMotor.isMoving()){
-			LCD.drawString("Command stop", 0, 1);
-			BumperCar.leftMotor.stop();
-			BumperCar.rightMotor.stop();
-		}
-		else{
-			LCD.drawString("Command start", 0, 1);
-			BumperCar.leftMotor.forward();
-			BumperCar.rightMotor.forward();
-		}
+		LCD.drawString("Turning", 0, 1);
+		Sound.twoBeeps();
+		BumperCar.leftMotor.rotate(-180, true);// start Motor.A rotating
+		// backward
+		BumperCar.rightMotor.rotate(-360); // rotate C farther to make the turn
 	}
 
-	@Override
+	
 	public void suppress() {
 		_suppressed = true;
 	}
