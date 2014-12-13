@@ -48,10 +48,10 @@ public class BumperCar {
 class DriveForward implements Behavior {
 
 	private boolean _suppressed = false;
-	private SoundSensor ear;
+	public enum Direction {FORWARD, BACKWARD}
+	private Direction direction;
 	
 	public DriveForward(){
-		ear = new SoundSensor(SensorPort.S2);
 	}
 
 	/**
@@ -67,12 +67,27 @@ class DriveForward implements Behavior {
 
 	public void action() {
 		_suppressed = false;
+		direction = Direction.FORWARD;
 		
-		LCD.clear();
-		LCD.drawString("Moving forward", 0, 1);
+		if(BumperCar.leftMotor.isStalled() && BumperCar.rightMotor.isStalled())
+		{
+			direction = (direction == Direction.FORWARD ? Direction.BACKWARD : Direction.FORWARD);
+			LCD.clear();
+			LCD.drawString("Stalled", 0, 1);
+		}
 		
-		BumperCar.leftMotor.forward();
-		BumperCar.rightMotor.forward();
+		if(direction == Direction.FORWARD)
+		{
+			BumperCar.leftMotor.forward();
+			BumperCar.rightMotor.forward();
+		}
+		else
+		{
+			BumperCar.leftMotor.backward();
+			BumperCar.rightMotor.backward();
+		}
+		
+		
 		while (!_suppressed) {
 			Thread.yield(); // don't exit till suppressed
 		}
@@ -133,7 +148,7 @@ class Listen implements Behavior {
 	 * Listens for loudish sound
 	 */
 	public boolean takeControl() {
-		return ear.readValue() > 30;
+		return ear.readValue() > 25;
 	}
 
 	
