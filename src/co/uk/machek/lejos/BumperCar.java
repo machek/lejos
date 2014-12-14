@@ -37,10 +37,12 @@ public class BumperCar {
 		Behavior drive = new DriveForward();
 		Behavior detect = new DetectWall();
 		Behavior listen = new Listen();
+		
 		Behavior[] behaviorList = { drive, detect, listen };
 		Arbitrator arbitrator = new Arbitrator(behaviorList);
 		LCD.drawString("Bumper Car", 0, 1);
 		Button.waitForAnyPress();
+		
 		arbitrator.start();
 	}
 }
@@ -52,6 +54,7 @@ class DriveForward implements Behavior {
 	private Direction direction;
 	
 	public DriveForward(){
+		direction = Direction.FORWARD;
 	}
 
 	/**
@@ -67,30 +70,34 @@ class DriveForward implements Behavior {
 
 	public void action() {
 		_suppressed = false;
-		direction = Direction.FORWARD;
 		
-		if(BumperCar.leftMotor.isStalled() && BumperCar.rightMotor.isStalled())
-		{
-			direction = (direction == Direction.FORWARD ? Direction.BACKWARD : Direction.FORWARD);
-			LCD.clear();
-			LCD.drawString("Stalled", 0, 1);
-		}
+		LCD.clear();
 		
 		if(direction == Direction.FORWARD)
 		{
+			LCD.drawString("Forward", 0, 1);
 			BumperCar.leftMotor.forward();
 			BumperCar.rightMotor.forward();
 		}
 		else
 		{
+			LCD.drawString("Backward", 0, 1);
 			BumperCar.leftMotor.backward();
 			BumperCar.rightMotor.backward();
 		}
 		
+		if(BumperCar.leftMotor.isStalled() || BumperCar.rightMotor.isStalled())
+		{
+			direction = (direction == Direction.FORWARD ? Direction.BACKWARD : Direction.FORWARD);
+			LCD.clear();
+			LCD.drawString("Stalled", 0, 1);
+			Sound.twoBeeps();
+		}
 		
 		while (!_suppressed) {
 			Thread.yield(); // don't exit till suppressed
 		}
+		
 		BumperCar.leftMotor.stop();
 		BumperCar.leftMotor.stop();
 	}
@@ -98,6 +105,9 @@ class DriveForward implements Behavior {
 
 class DetectWall implements Behavior {
 
+	private TouchSensor touch;
+	private UltrasonicSensor sonar;
+	
 	public DetectWall() {
 		touch = new TouchSensor(SensorPort.S1);
 		sonar = new UltrasonicSensor(SensorPort.S3);
@@ -126,8 +136,6 @@ class DetectWall implements Behavior {
 		BumperCar.rightMotor.rotate(-360); // rotate C farther to make the turn
 	}
 
-	private TouchSensor touch;
-	private UltrasonicSensor sonar;
 }
 
 /**
@@ -147,21 +155,18 @@ class Listen implements Behavior {
 	/**
 	 * Listens for loudish sound
 	 */
-	public boolean takeControl() {
-		return ear.readValue() > 25;
+	public boolean takeControl(){
+		return ear.readValue() > 30;
 	}
 
-	
 	public void action() {
 		
 		LCD.clear();
-		LCD.drawString("Turning", 0, 1);
-		Sound.twoBeeps();
+		Sound.beepSequenceUp();
 		BumperCar.leftMotor.rotate(-180, true);// start Motor.A rotating
 		// backward
 		BumperCar.rightMotor.rotate(-360); // rotate C farther to make the turn
 	}
-
 	
 	public void suppress() {
 		_suppressed = true;
